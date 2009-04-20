@@ -86,9 +86,35 @@ def kb_trav(G, u, v):
 	count = 0
 	
 	return count
+
+def make_long_range(G, q, r):
+	"""
+	input a digraph G and returns a new digraph G with long range
+	contacts added based on parameters q and r, assume they are > 0
 	
+	"""
+	
+	distance_list = []
+	distance_counts = []
+	
+	node_list = G.nodes()
+	for (i, j) in node_list:
+		for (k,l) in node_list:
+			distance_list.append(dist(i,j,k,l))
+		distance_list.remove(0)	
+		distance_list.sort()
+		max_dist = distance_list.[-1]
+		
+		for n in xrange(max_dist): #max distance for this u,v		
+			distance_counts.append(0) #create an index of all distances
+		for d in distance_list:
+			distance_counts[d] += 1 # increment indicies
+				
+		
 def dist(i,j,k,l):
 	return (abs(i-k)+abs(j-l))
+	
+
 	
 #other functions to write
 #average degree of all nodes

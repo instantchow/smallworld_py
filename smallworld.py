@@ -94,16 +94,20 @@ def make_long_range(G, q, r):
 	
 	"""
 	
-	distance_list = []
+	
 	distance_counts = []
 	
 	node_list = G.nodes()
-	for (i, j) in node_list:
-		for (k,l) in node_list:
+	for (i, j) in node_list: #each node
+		distance_list = [] #clear the distances list
+		
+		for (k,l) in node_list: #make a list of dist to all other nodes
 			distance_list.append(dist(i,j,k,l))
-		distance_list.remove(0)	
-		distance_list.sort()
-		max_dist = distance_list.[-1]
+			
+		distance_list.remove(0)	#get rid of the self dist
+		#distance_list.sort()	#sort the list, need the max
+		#max_dist = distance_list[-1]
+		max_dist = max(distance_list)
 		
 		for n in xrange(max_dist): #max distance for this u,v		
 			distance_counts.append(0) #create an index of all distances
@@ -114,7 +118,45 @@ def make_long_range(G, q, r):
 def dist(i,j,k,l):
 	return (abs(i-k)+abs(j-l))
 	
-
+def nodes_at_dist(G, i,j, d):
+	"""
+	input a graph, i,j and lattice distance d
+	returns all nodes at the distance d in a list
+	4*d nodes will be returned, 
+	
+	"""
+	if d == 0:
+		print "nana"
+		return []
+	
+	List = []
+	row_cursor = d
+			
+	while row_cursor > 1:
+		row_cursor -= 1
+		#check/add nodes rowcur-1 to 0
+		if (i + row_cursor, j+(d-row_cursor)) in G.nodes(): #starboard fore
+			List.append((i + row_cursor, j+(d-row_cursor)))
+		if (i + row_cursor, j-(d-row_cursor)) in G.nodes(): #port fore
+			List.append((i + row_cursor, j-(d-row_cursor)))
+		if (i - row_cursor, j+(d-row_cursor)) in G.nodes(): #port aft
+			List.append((i - row_cursor, j+(d-row_cursor)))
+		if (i - row_cursor, j-(d-row_cursor)) in G.nodes(): #port aft
+			List.append((i - row_cursor, j-(d-row_cursor)))
+			#interesting, int underflowed and caused negative nums! add more parenthesis!
+	
+	#check the 4 corners around d
+	if (i + d, j) in G.nodes(): #top
+		List.append((i + d, j))
+	if (i - d, j) in G.nodes(): #bottom
+		List.append((i - d, j))
+	if (i , j+d ) in G.nodes(): #right
+		List.append((i , j+d ))
+	if (i , j-d ) in G.nodes(): #left
+		List.append((i , j-d))
+	
+	
+	return List
 	
 #other functions to write
 #average degree of all nodes

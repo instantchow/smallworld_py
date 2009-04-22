@@ -61,19 +61,7 @@ def kleinberg_grid(n, p=1, q=0, r=0,seed=1):
 	#r is the distribution
 	
 	if q > 0:
-		#start adding long range only if nessisarry
-		rand.seed(seed)
-		for (i,j) in G.nodes():
-			#for each node in G run this q times
-			for x in xrange(q):
-				(k,l)=(i,j)
-				#set temp node eq to start loop
-				while ( (k,l)==(i,j) ):
-					#select a (k,l) node thats not a selfloop
-					(k,l) = rand.choice(G.nodes())
-					#possible inf loop here if only one node	
-				#add the edge (its directed, i,j -> k,l)
-				G.add_edge( (i,j), (k,l) )
+		make_long_range(G,q,r)
 						
 	return G
 
@@ -84,22 +72,73 @@ def kb_trav(G, u, v):
 	#is found, when dist is 0
 	#use.neighbors(node) to search best route
 	count = 0
+	closest_node_dist = -1 
+	closest_node = (0,0) 
+	
+	while u != v:
+		
+		count += 1
+		for n in G.neighbors(u):
+			
+			
+			if closest_node_dist > dist(v[0],v[1],n[0],n[1]) or closest_node_dist == -1:
+				#set new closest node to n and dist to this new dist
+				closest_node = n
+				closest_node_dist = dist(v[0],v[1],n[0],n[1])	
+			#after all iterations of the neighbors, move u to the closest
+		u = closest_node
+		#print "next move to node: " + str(u) + " with neighbors " +str(G.neighbors(u))
+		closest_node_dist = -1 #reset
+	#loop
 	
 	return count
 
 def make_long_range(G, q, r):
+	import random 
 	"""
 	input a digraph G and returns a new digraph G with long range
 	contacts added based on parameters q and r, assume they are > 0
 	
-	"""
+	for each node, add edges while q-- is > 1, then one more if q>rand
+	each edge has prob based on number of dist d nodes surrounding it
+	calc the range of probs at d1-dn, pick a node at d chosen uniformly
 	
+	"""
+	if q == 0: return G
+		#nothing to do
+		
+	if r == 0:
+		q_whole = int(q)
+		q_fract = q-q_whole
+		
+		for (i, j) in G.nodes(): #each node
+			for x in xrange(q_whole):
+				G.add_edge((i,j), random.choice(G.nodes()))
+			if q_fract > random.random():
+				G.add_edge((i,j), random.choice(G.nodes()))
+				
+	return G
+				
+			
 	
 	distance_counts = []
+	normalizing_cof = 0.0
+	prob = 0.0
+	
 	
 	node_list = G.nodes()
 	for (i, j) in node_list: #each node
 		distance_list = [] #clear the distances list
+		
+		for d in xrange(1,len(G)): ##will definatly end sooner, itterate all possible distances for u,v
+			distance_list.append( len(nodes_at_dist(G, i, j, d)) )
+			if distance_list[-1] == 0 : ## theres no more at possible nodes at any d > i
+				break
+			distance_list.pop() #get rid of the last 0
+			
+		#sum up all the d^-r for the denominator of this thang
+		for n in xrange(len(distance_list)):
+			normalizing_co += pow(distance_list[n],-r)*distance_list[n]
 		
 		for (k,l) in node_list: #make a list of dist to all other nodes
 			distance_list.append(dist(i,j,k,l))

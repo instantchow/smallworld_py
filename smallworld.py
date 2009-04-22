@@ -74,13 +74,13 @@ def kb_trav(G, u, v):
 	count = 0
 	closest_node_dist = -1 
 	closest_node = (0,0) 
-	
+
 	while u != v:
-		
+		#print u, v, G.number_of_nodes()
+		#print G.nodes()
 		count += 1
 		for n in G.neighbors(u):
-			
-			
+				
 			if closest_node_dist > dist(v[0],v[1],n[0],n[1]) or closest_node_dist == -1:
 				#set new closest node to n and dist to this new dist
 				closest_node = n
@@ -196,7 +196,26 @@ def nodes_at_dist(G, i,j, d):
 	
 	
 	return List
-	
+
+def test():
+	q=0.0
+	for p in xrange(1,5):
+		while q <= 5.0:
+			g=kleinberg_grid(100,p,q)
+			print "g created"
+			s = 0.0
+			for n in xrange(10000):
+				u = rand.choice(g.nodes())
+				v = rand.choice(g.nodes())
+
+				while u == v:
+					print "rechoise"
+					v = rand.choice(g.nodes())
+				s += kb_trav(g,u,v)
+				
+			print "run with 10,000 choices, n=100, p=" + str(p)+ " q=" + str(q) +" Avg edges=" +str(s/10000.0)
+			q+=0.2
+			
 #other functions to write
 #average degree of all nodes
 #traverse n pairs and return list, or stats, hi lo, avg
@@ -204,6 +223,8 @@ def nodes_at_dist(G, i,j, d):
 	
 if __name__ == '__main__': 
 	import sys
-	kleinberg_grid(int(sys.argv[1]), sys.argv[1] )
+	import random as rand
+	#kleinberg_grid(int(sys.argv[1]), sys.argv[1] )
+	test()
 
 

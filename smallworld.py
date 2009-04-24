@@ -107,9 +107,13 @@ def make_long_range(G, q, r):
 	if q == 0: return G
 		#nothing to do
 		
+	q_whole = int(q)
+	q_fract = q-q_whole
+	
+		
 	if r == 0:
-		q_whole = int(q)
-		q_fract = q-q_whole
+		#return a uniform distrubition of long range links
+		
 		
 		for (i, j) in G.nodes(): #each node
 			for x in xrange(q_whole):
@@ -117,51 +121,57 @@ def make_long_range(G, q, r):
 			if q_fract > random.random():
 				G.add_edge((i,j), random.choice(G.nodes()))
 				
+		return G
+	
+	#everything else which q,r > 0
+		
+	#for each node n, for each other node m, n!=m calc the prob d(u,v)^-r
+	#increment the running sum, and update the dict with the node=sum
+	#when finished, select a rand[0,running_sum] and find dict entry which
+	#is the first one to have a value greater than rand
+	
+	running_sum = 0.0
+	prob_node_list = []		#2D list with float,node
+	for u in G.nodes():
+		running_sum = 0.0		#clear out the lists!
+		prob_node_list = []
+	
+		for v in G.nodes():
+			if u!=v:
+				#print "heres the running sum" + str(running_sum)
+				print str(pow(dist(u,v),-r))
+				running_sum += pow(dist(u,v),-r)
+				prob_node_list.append( (running_sum,v) )
+		
+		
+		#choose the_one
+		#choose q times
+		if q_fract > random.random(): q_whole +=1
+		for x in xrange(q_whole):
+			for e in prob_node_list:
+				if e[0] > random.uniform(0,running_sum):
+					the_one = e[1]
+					break
+			G.add_edge(u, the_one )	
+			print "distance to the_one" + str(dist(u,the_one))
+					
+	
+	
 	return G
-				
-			
-	
-	distance_counts = []
-	normalizing_cof = 0.0
-	prob = 0.0
-	
-	
-	node_list = G.nodes()
-	for (i, j) in node_list: #each node
-		distance_list = [] #clear the distances list
-		
-		for d in xrange(1,len(G)): ##will definatly end sooner, itterate all possible distances for u,v
-			distance_list.append( len(nodes_at_dist(G, i, j, d)) )
-			if distance_list[-1] == 0 : ## theres no more at possible nodes at any d > i
-				break
-			distance_list.pop() #get rid of the last 0
-			
-		#sum up all the d^-r for the denominator of this thang
-		for n in xrange(len(distance_list)):
-			normalizing_co += pow(distance_list[n],-r)*distance_list[n]
-		
-		for (k,l) in node_list: #make a list of dist to all other nodes
-			distance_list.append(dist(i,j,k,l))
-			
-		distance_list.remove(0)	#get rid of the self dist
-		#distance_list.sort()	#sort the list, need the max
-		#max_dist = distance_list[-1]
-		max_dist = max(distance_list)
-		
-		for n in xrange(max_dist): #max distance for this u,v		
-			distance_counts.append(0) #create an index of all distances
-		for d in distance_list:
-			distance_counts[d] += 1 # increment indicies
 				
 		
 def dist(i,j,k,l):
 	return (abs(i-k)+abs(j-l))
 	
+def dist(u,v):
+	return (abs(u[0]-v[0])+abs(u[1]-v[1]))
+
+	
 def nodes_at_dist(G, i,j, d):
 	"""
 	input a graph, i,j and lattice distance d
 	returns all nodes at the distance d in a list
-	4*d nodes will be returned, 
+	4*d nodes will be returned as a List
 	
 	"""
 	if d == 0:
@@ -197,25 +207,47 @@ def nodes_at_dist(G, i,j, d):
 	
 	return List
 
-def test():
-	q=0.0
-	for p in xrange(1,5):
-		while q <= 5.0:
-			g=kleinberg_grid(100,p,q)
-			print "g created"
-			s = 0.0
-			for n in xrange(10000):
-				u = rand.choice(g.nodes())
-				v = rand.choice(g.nodes())
+def test(arg_n, arg_p, arg_q, step):
+	#example run test(100, 1, 15, 0.2)
+	n=int(arg_n)
+	p=arg_p
+	q=arg_q*step
+	
+	G=kleinberg_grid(n,p,q)
+	s = 0.0
+	for x in xrange(n*10):
+		u = rand.choice(G.nodes())
+		v = rand.choice(G.nodes())
+		while u == v:
+			#pint "oops, u==v"
+			v = rand.choice(G.nodes())
+		s += kb_trav(G,u,v)
+		
+	print "n"+ " \t" + "p" + "\t" + "q" + "\t" + "Avg Path Len"
+	print str(n) + "\t" + str(p)+ "\t" + str(q) + "\t" +str(s/(n*10.0))
+	
+def grid_layout(G):
+	"""
+	builds a position dict for the positioning of nodes on a grid
+	eg, node 0,0 is at 0,0 and n,m is at n,m!
+	put them in their place!!
+	niceeeee
+	
+	"""
+	import Numeric as N
+	pos={}
+	for v in G.nodes():
+		pos[v]=N.array([v[0],v[1]])
 
-				while u == v:
-					print "rechoise"
-					v = rand.choice(g.nodes())
-				s += kb_trav(g,u,v)
-				
-			print "run with 10,000 choices, n=100, p=" + str(p)+ " q=" + str(q) +" Avg edges=" +str(s/10000.0)
-			q+=0.2
-			
+	#nx.draw(G, pos)
+	#plt.savefig("kleinberg10-2-0.png")
+	return pos
+def show_me(G):
+	pos = grid_layout(G)
+	nx.draw(G, pos)
+	
+	
+	
 #other functions to write
 #average degree of all nodes
 #traverse n pairs and return list, or stats, hi lo, avg
@@ -225,6 +257,6 @@ if __name__ == '__main__':
 	import sys
 	import random as rand
 	#kleinberg_grid(int(sys.argv[1]), sys.argv[1] )
-	test()
+	test(int(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]), float(sys.argv[4]))
 
 

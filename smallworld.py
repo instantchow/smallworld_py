@@ -81,10 +81,10 @@ def kb_trav(G, u, v):
 		count += 1
 		for n in G.neighbors(u):
 				
-			if closest_node_dist > dist(v[0],v[1],n[0],n[1]) or closest_node_dist == -1:
+			if closest_node_dist > dist(v,n) or closest_node_dist == -1:
 				#set new closest node to n and dist to this new dist
 				closest_node = n
-				closest_node_dist = dist(v[0],v[1],n[0],n[1])	
+				closest_node_dist = dist(v,n)	
 			#after all iterations of the neighbors, move u to the closest
 		u = closest_node
 		#print "next move to node: " + str(u) + " with neighbors " +str(G.neighbors(u))
@@ -130,31 +130,38 @@ def make_long_range(G, q, r):
 	#when finished, select a rand[0,running_sum] and find dict entry which
 	#is the first one to have a value greater than rand
 	
-	running_sum = 0.0
-	prob_node_list = []		#2D list with float,node
+
 	for u in G.nodes():
-		running_sum = 0.0		#clear out the lists!
+		running_sum = 0.0		#clear out the lists! for each u
 		prob_node_list = []
-	
+		coef_sum = 1.0
+		teh_rand = 0.0	
+		"""
+		for v in G.nodes():
+			if u!=v:
+				coef_sum += pow(dist(u,v),-r)
+		"""
 		for v in G.nodes():
 			if u!=v:
 				#print "heres the running sum" + str(running_sum)
-				print str(pow(dist(u,v),-r))
-				running_sum += pow(dist(u,v),-r)
+				
+				running_sum += pow(dist(u,v),-r) / coef_sum
 				prob_node_list.append( (running_sum,v) )
-		
 		
 		#choose the_one
 		#choose q times
 		if q_fract > random.random(): q_whole +=1
 		for x in xrange(q_whole):
+			teh_rand = random.uniform(0,running_sum)
+			
 			for e in prob_node_list:
-				if e[0] > random.uniform(0,running_sum):
+				if e[0] > teh_rand:
+				#if e[0] > random.uniform(0,running_sum): AH HA!!!!
 					the_one = e[1]
 					break
 			G.add_edge(u, the_one )	
-			print "distance to the_one" + str(dist(u,the_one))
-					
+			#print "distance to the_one" + str(dist(u,the_one))
+		#repeat if q>1			
 	
 	
 	return G
@@ -207,13 +214,13 @@ def nodes_at_dist(G, i,j, d):
 	
 	return List
 
-def test(arg_n, arg_p, arg_q, step):
+def test(arg_n, arg_p, arg_q, arg_r, step):
 	#example run test(100, 1, 15, 0.2)
 	n=int(arg_n)
 	p=arg_p
-	q=arg_q*step
-	
-	G=kleinberg_grid(n,p,q)
+	q=arg_q
+	r=arg_r*step
+	G=kleinberg_grid(n,p,q,r)
 	s = 0.0
 	for x in xrange(n*10):
 		u = rand.choice(G.nodes())
@@ -223,8 +230,11 @@ def test(arg_n, arg_p, arg_q, step):
 			v = rand.choice(G.nodes())
 		s += kb_trav(G,u,v)
 		
-	print "n"+ " \t" + "p" + "\t" + "q" + "\t" + "Avg Path Len"
-	print str(n) + "\t" + str(p)+ "\t" + str(q) + "\t" +str(s/(n*10.0))
+	print "n"+ " \t" + "p" + "\t" + "q" + "\t" + "r" + "\t" + "Avg Path Len"
+	print str(n) + "\t" + str(p)+ "\t" + str(q) + "\t" + str(r)+ "\t" + str(s/(n*10.0))
+	
+    
+
 	
 def grid_layout(G):
 	"""
@@ -237,14 +247,14 @@ def grid_layout(G):
 	import Numeric as N
 	pos={}
 	for v in G.nodes():
-		pos[v]=N.array([v[0],v[1]])
+		pos[v]=N.array([v[0]+v[1]%2*0.25,v[1]+v[0]%2*0.25])
 
 	#nx.draw(G, pos)
 	#plt.savefig("kleinberg10-2-0.png")
 	return pos
 def show_me(G):
 	pos = grid_layout(G)
-	nx.draw(G, pos)
+	nx.draw(G, pos, node_size=78, labels=None)
 	
 	
 	
@@ -255,8 +265,7 @@ def show_me(G):
 	
 if __name__ == '__main__': 
 	import sys
-	import random as rand
 	#kleinberg_grid(int(sys.argv[1]), sys.argv[1] )
-	test(int(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]), float(sys.argv[4]))
+	test(int(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4]), float(sys.argv[5]))
 
 

@@ -21,7 +21,7 @@
 
 import networkx as nx
 import random as rand
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 
 
@@ -30,16 +30,17 @@ def kleinberg_grid(n, p=1, q=0, r=0,seed=1):
 	Returns a square 2d DiGraph of size n*n
 	
 	Parameters as folows:
-	- n : size of the grid with sides n*n
-	- p : number of local contacts each node will have
-	- q : number of long range contacts created for each node
-	- r : clustering factor
+	- n : size of the grid with sides n*n (int)
+	- p : number of local contacts each node will have (int)
+	- q : number of long range contacts created for each node (float)
+	- r : clustering factor (float)
 	- seed : seed value for the random method
 	
 	"""
 	
 	#starts with a undirected graph
 	G = nx.empty_graph()
+	#name does not carry over after to_directed() call...
 	G.name="kleinberg_grid n=%s p=%s q=%s r=%s seed=%s"%(n,p,q,r,seed)
 	
 	#make all the nodes
@@ -55,22 +56,31 @@ def kleinberg_grid(n, p=1, q=0, r=0,seed=1):
 						if (i,j) != (k,l):
 							G.add_edge( (i,j), (k,l) )
 							
-	#add long distance links (oh directed!)
+	#add long distance links
+	#convert to a digraph, links will be doubled
 	G=G.to_directed()
-	#also for each node, q is how many extra links per node
-	#r is the distribution
 	
+	#no need run longrange algo unless q>0
 	if q > 0:
-		make_long_range(G,q,r)
+		G=make_long_range(G,q,r)
 						
 	return G
 
 def kb_trav(G, u, v):
-	#take DiGraph G, nodes u,v - traverse edges and count number
-	#of edges to v, calc distance of each in adjacency list
-	#pick smallest dist value
-	#is found, when dist is 0
-	#use.neighbors(node) to search best route
+	"""
+	input:
+		DiGraph G
+		Nodes u,v | in the form of a tuple (i,j)
+	output:
+		traversed edges as int
+	algorithm: greedy local information search
+		start at u
+		calc distance of each in adjacency list of u
+		pick smallest dist value
+		is found, when dist is 0
+		uses neighbors(node) method
+	"""
+	
 	count = 0
 	closest_node_dist = -1 
 	closest_node = (0,0) 
@@ -96,13 +106,15 @@ def kb_trav(G, u, v):
 def make_long_range(G, q, r):
 	import random 
 	"""
-	input a digraph G and returns a new digraph G with long range
-	contacts added based on parameters q and r, assume they are > 0
-	
-	for each node, add edges while q-- is > 1, then one more if q>rand
-	each edge has prob based on number of dist d nodes surrounding it
-	calc the range of probs at d1-dn, pick a node at d chosen uniformly
-	
+	input:
+		a digraph G and returns a new digraph G with long range
+		contacts added based on parameters q and r, assume they are > 0
+	note:
+		for each node, add edges while q-- is > 1, then one more with pr[q]
+		each edge has prob based d[u,v]^-r
+		calcs this for each node for each originating node (n^2 operation)
+		puts all the d[u,v]^r in a large array, in the form of
+		[0,d1,d2+d1...dn+dn-1] and uniformly choose a float in the whole range
 	"""
 	if q == 0: return G
 		#nothing to do
@@ -180,6 +192,7 @@ def nodes_at_dist(G, i,j, d):
 	returns all nodes at the distance d in a list
 	4*d nodes will be returned as a List
 	
+	may be deleted, not used
 	"""
 	if d == 0:
 		print "nana"
@@ -238,10 +251,15 @@ def test(arg_n, arg_p, arg_q, arg_r, step):
 	
 def grid_layout(G):
 	"""
+	helper method for show_me() 
+	
 	builds a position dict for the positioning of nodes on a grid
 	eg, node 0,0 is at 0,0 and n,m is at n,m!
 	put them in their place!!
 	niceeeee
+	
+	Also added a stager to the nodes to better visualize edges that are 
+	across the same row or column, less edge overlap
 	
 	"""
 	import Numeric as N
@@ -253,15 +271,15 @@ def grid_layout(G):
 	#plt.savefig("kleinberg10-2-0.png")
 	return pos
 def show_me(G):
+	"""
+	draws the nodes in a grid layout
+	
+	"""
+	
 	pos = grid_layout(G)
 	nx.draw(G, pos, node_size=78, labels=None)
+	plt.show()
 	
-	
-	
-#other functions to write
-#average degree of all nodes
-#traverse n pairs and return list, or stats, hi lo, avg
-#need to parameratize r for the script, and to verify data
 	
 if __name__ == '__main__': 
 	import sys
